@@ -1,4 +1,7 @@
 module: termbox
+synopsis: Bindings for the termbox library
+author: Francesco Ceccon
+copyright: See LICENSE file in this distribution.
 
 define constant <uint8> = <c-unsigned-char>;
 define constant <uint16> = <c-unsigned-short>;
@@ -78,17 +81,20 @@ define constant $TB-KEY-CTRL-8 = 127;
 
 define constant $TB-MOD-ALT = 1;
 
-define constant $TB-BLACK = 0;
-define constant $TB-RED = 1;
-define constant $TB-GREEN = 2;
-define constant $TB-YELLOW = 3;
-define constant $TB-BLUE = 4;
-define constant $TB-MAGENTA = 5;
-define constant $TB-CYAN = 6;
-define constant $TB-WHITE = 7;
-define constant $TB-DEFAULT = 15;
-define constant $TB-BOLD = 16;
-define constant $TB-UNDERLINE = 32;
+define constant $TB-BLACK = #x00;
+define constant $TB-RED = #x01;
+define constant $TB-GREEN = #x02;
+define constant $TB-YELLOW = #x03;
+define constant $TB-BLUE = #x04;
+define constant $TB-MAGENTA = #x05;
+define constant $TB-CYAN = #x06;
+define constant $TB-WHITE = #x07;
+define constant $TB-DEFAULT = #x0F;
+
+define constant $TB-NORMAL = #x00;
+define constant $TB-BOLD = #x10;
+define constant $TB-UNDERLINE = #x20;
+define constant $TB-BOLD-UNDERLINE = #x30;
 
 define constant $TB-EUNSUPPORTED-TERMINAL = -1;
 define constant $TB-EFAILED-TO-OPEN-TTY = -2;
@@ -105,7 +111,7 @@ define constant $TB-EVENT-RESIZE = 2;
 define constant $TB-EOF = -1;
 
 define C-struct <_tb-cell>
-  slot cell-ch :: <uint32>;
+  slot cell-ch :: <c-char>;
   slot cell-fg :: <uint16>;
   slot cell-bg :: <uint16>;
   pointer-type-name: <tb-cell>;
@@ -204,22 +210,6 @@ define C-function %tb-poll-event
   c-name: "tb_poll_event";
 end;
 
-define function tb-peek-event
-    (timeout :: <integer>)
- => (event-type, event :: <tb-event>)
-  let e = make(<tb-event>);
-  let t = %tb-peek-event(e, timeout);
-  values(t, e)
-end function tb-peek-event;
-
-define function tb-poll-event
-    ()
- => (event-type, event :: <tb-event>)
-  let e = make(<tb-event>);
-  let t = %tb-poll-event(e);
-  values(t, e)
-end function tb-poll-event;
-
 /* utf-8 - unicode functions */
 define C-function utf8-char-length
   input parameter c_ :: <C-signed-char>;
@@ -240,3 +230,48 @@ define C-function utf8-unicode-to-char
   result res :: <C-signed-int>;
   c-name: "utf8_unicode_to_char";
 end;
+
+/* Dylan functions */
+define constant <tb-color> = one-of($TB-DEFAULT, $TB-BLACK, $TB-RED, $TB-GREEN,
+                                    $TB-YELLOW, $TB-BLUE, $TB-MAGENTA, $TB-CYAN, $TB-WHITE);
+define constant <tb-style> = one-of($TB-NORMAL, $TB-BOLD, $TB-UNDERLINE, $TB-BOLD-UNDERLINE);
+
+define function tb-peek-event
+    (timeout :: <integer>)
+ => (event-type, event :: <tb-event>)
+  let e = make(<tb-event>);
+  let t = %tb-peek-event(e, timeout);
+  values(t, e)
+end function tb-peek-event;
+
+define function tb-poll-event
+    ()
+ => (event-type, event :: <tb-event>)
+  let e = make(<tb-event>);
+  let t = %tb-poll-event(e);
+  values(t, e)
+end function tb-poll-event;
+
+define method tb-print
+    (x :: <integer>,
+     y :: <integer>,
+     str :: <string>,
+     #key style :: <tb-style> = $TB-NORMAL,
+          fg :: <tb-color> = $TB-DEFAULT,
+          bg :: <tb-color> = $TB-DEFAULT)
+  let f = logior(fg, style);
+  for (ch in str, i from 0)
+    tb-change-cell(x + i, y, as(<integer>, ch), f, bg);
+  end for;
+end method tb-print;
+
+define method tb-print
+    (x :: <integer>,
+     y :: <integer>,
+     ch :: <character>,
+     #key style :: <tb-style> = $TB-NORMAL,
+          fg :: <tb-color> = $TB-DEFAULT,
+          bg :: <tb-color> = $TB-DEFAULT)
+  let f = logior(fg, style);
+  tb-change-cell(x, y, as(<integer>, ch), f, bg);
+end method tb-print;

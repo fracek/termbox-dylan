@@ -39,6 +39,7 @@ define module termbox
   export $TB-BLACK,
     $TB-BLUE,
     $TB-BOLD,
+    $TB-BOLD-UNDERLINE,
     $TB-CYAN,
     $TB-DEFAULT,
     $TB-EFAILED-TO-OPEN-TTY,
@@ -143,4 +144,8 @@ define module termbox
   export utf8-char-length,
     utf8-char-to-unicode,
     utf8-unicode-to-char;
+
+  export <tb-color>,
+    <tb-style>,
+    tb-print;
 end module;

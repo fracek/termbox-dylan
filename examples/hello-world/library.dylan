@@ -7,7 +7,7 @@ define library hello-world
 end library;
 
 define module hello-world
-  use common-dylan, exclude: { format-to-string };
+  use common-dylan;
   use format-out;
   use termbox;
 end module;
